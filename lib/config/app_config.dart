@@ -1,4 +1,6 @@
 import 'dart:ui';
+// Intentional test violation: Domain/Config layer must not import Presentation layer (pages)
+import 'package:fluffychat/pages/chat/chat_view.dart';
 
 abstract class AppConfig {
   // Const and final configuration values (immutable)

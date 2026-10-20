@@ -1,0 +1,27 @@
+version: "1.0.0"
+monorepo:
+  package_dirs:
+    - "lib"
+
+  layers:
+    - name: "domain"
+      aliases: ["config", "utils"]
+      description: "Tầng dữ liệu logic cốt lõi và tiện ích dùng chung"
+    - name: "presentation"
+      aliases: ["pages", "widgets"]
+      description: "Tầng giao diện người dùng và màn hình Flutter"
+
+rules:
+  - id: "RULE_CLEAN_DOMAIN"
+    name: "Clean Architecture: Domain/Core không được import Presentation"
+    severity: "BLOCKER"
+    description: "Tầng cốt lõi nghiệp vụ và tiện ích dùng chung (config, utils) cấm import ngược giao diện người dùng (pages, widgets)."
+    source_layer: "domain"
+    forbidden_target_layers:
+      - "presentation"
+    remediation_suggestion: "Tách biệt hoàn toàn logic tiện ích khỏi UI widgets hoặc pages."
+
+  - id: "RULE_CIRCULAR_DEP"
+    name: "Phát hiện phụ thuộc vòng chéo (Circular Dependencies)"
+    severity: "BLOCKER"
+    description: "Cấm các file hoặc module import vòng qua lại lẫn nhau."
