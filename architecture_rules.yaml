@@ -1,0 +1,79 @@
+# ==============================================================================
+# QUY CHUẨN KIẾN TRÚC MATRIX MOBILE - MINH HỌA TOÀN BỘ 5 CƠ CHẾ RULE
+# ==============================================================================
+
+version: "1.0.0"
+monorepo:
+  package_dirs:
+    - "lib"
+
+  layers:
+    - name: "domain"
+      aliases: ["config", "utils"]
+      description: "Tầng dữ liệu logic cốt lõi và tiện ích dùng chung"
+    - name: "presentation"
+      aliases: ["pages", "widgets"]
+      description: "Tầng giao diện người dùng và màn hình Flutter"
+
+rules:
+  # ----------------------------------------------------------------------------
+  # CƠ CHẾ 1: layer_boundary (Kiểm soát phân tầng Clean Architecture)
+  # ----------------------------------------------------------------------------
+  - id: "RULE_CLEAN_DOMAIN"
+    type: "layer_boundary"
+    severity: "BLOCKER"
+    source_layer: "domain"
+    forbidden_target_layers:
+      - "presentation"
+    description: "Tầng cốt lõi nghiệp vụ và tiện ích (config, utils) cấm import ngược UI (pages, widgets)."
+    remediation: "Tách biệt hoàn toàn logic tiện ích khỏi UI widgets hoặc pages bằng Dependency Inversion."
+    ai_prompt: "Giải thích vì sao tầng config/domain không được import UI và hướng dẫn dùng abstraction."
+
+  # ----------------------------------------------------------------------------
+  # CƠ CHẾ 2: forbidden_calls (Cấm gọi tên hàm/phương thức bất kỳ)
+  # ----------------------------------------------------------------------------
+  - id: "BAN_PRINT_ON_PROD"
+    type: "forbidden_calls"
+    severity: "BLOCKER"
+    calls: ["print", "debugPrint"]
+    description: "Cấm in log trực tiếp trên Production gây rò rỉ token PII và giật UI."
+    remediation: "Sử dụng AppLogger hoặc Logs.d() thay thế."
+    ai_prompt: "Giải thích rủi ro rò rỉ bảo mật token Matrix trên Android Logcat khi gọi print()."
+
+  # ----------------------------------------------------------------------------
+  # CƠ CHẾ 3: ast_pattern (Bắt Anti-Pattern AST dựng sẵn)
+  # ----------------------------------------------------------------------------
+  - id: "ASYNC_MOUNTED_GUARD"
+    type: "ast_pattern"
+    pattern_id: "await_before_setstate"
+    severity: "CRITICAL"
+    description: "Bắt buộc có 'if (!mounted) return;' sau lệnh await trước khi gọi setState."
+    remediation: "Chèn guard clause 'if (!mounted) return;' ngay sau await."
+    ai_prompt: "Giải thích cơ chế lifecycle widget trong Flutter và tại sao thiếu mounted guard gây crash app."
+
+  # ----------------------------------------------------------------------------
+  # CƠ CHẾ 4: meta_pattern (Mẫu cú pháp Meta-Variable tự do chuẩn Semgrep)
+  # ----------------------------------------------------------------------------
+  - id: "NO_SILENT_EMPTY_CATCH"
+    type: "meta_pattern"
+    language: "dart"
+    severity: "BLOCKER"
+    pattern: |
+      try {
+        ...
+      } catch ($E) {
+      }
+    description: "Bắt được biến ngoại lệ $E nhưng bỏ trống khối catch (nuốt exception ngầm)."
+    remediation: "Bắt buộc ghi log ngoại lệ vào Crashlytics hoặc hiển thị thông báo lỗi."
+    ai_prompt: "Giải thích tại sao khối catch rỗng làm mù hệ thống giám sát APM (Crashlytics/Sentry)."
+
+  # ----------------------------------------------------------------------------
+  # CƠ CHẾ 5: custom_script (Plugin script tự viết kiểm tra đặc thù)
+  # ----------------------------------------------------------------------------
+  - id: "CHECK_VIEW_FILE_NAMING"
+    type: "custom_script"
+    run: ".review/rules/check_naming.py"
+    severity: "WARNING"
+    description: "Tên file view trong lib/pages/ phải kết thúc bằng '_view.dart'."
+    remediation: "Đổi tên file theo đúng convention (*_view.dart)."
+    ai_prompt: "Giải thích lợi ích của việc chuẩn hóa naming convention cho Flutter team."
